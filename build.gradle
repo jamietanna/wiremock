@@ -17,6 +17,7 @@ plugins {
     id 'eclipse'
     id 'project-report'
     id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'org.openapi.generator' version '5.2.1'
 }
 
 group = 'com.github.tomakehurst'
@@ -216,26 +217,15 @@ task testJar(type: Jar, dependsOn: testClasses) {
 }
 
 final DOCS_DIR = project(':').rootDir.getAbsolutePath() + '/docs-v2'
-task npmInstall(type: Exec) {
-    workingDir DOCS_DIR
-    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
-        commandLine 'cmd', '/c', 'npm', 'i'
-    } else {
-        commandLine 'npm', 'i'
-    }
+
+openApiGenerate {
+    inputSpec = 'src/main/resources/swagger/wiremock-admin-api.yaml'
+    generatorName = 'html'
+    outputDir = 'src/main/resources/assets/swagger-ui'
+    // TODO: workingDir = 'DOCS_DIR'
 }
 
-task generateApiDocs(type: Exec) {
-    dependsOn npmInstall
-    workingDir DOCS_DIR
-    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
-        commandLine 'cmd', '/c', 'npm', 'run', 'apidocs'
-    } else {
-        commandLine 'npm', 'run', 'apidocs'
-    }
-}
-
-processResources.dependsOn generateApiDocs
+processResources.dependsOn openApiGenerate
 
 configurations {
     shadowJar
@@ -401,7 +391,7 @@ task addGitTag {
     }
 }
 
-jar.dependsOn generateApiDocs
+jar.dependsOn openApiGenerate
 signThinJarPublication.dependsOn writeThinJarPom
 
 task release {
